@@ -1,0 +1,169 @@
+.language-switcher {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+  font-family: Arial, sans-serif;
+  z-index: 999999;
+  width: 160px;
+  text-align: center;
+}
+
+#language-button {
+  width: 100%;
+  background: #fff;
+  border: none;
+  cursor: pointer;
+  padding: 10px;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  color: #004d9e;
+  justify-content: start;
+  border-radius: 8px;
+}
+
+#language-button img {
+  width: 20px;
+  height: 15px;
+  margin-right: 6px;
+}
+
+#language-dropdown {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  background: white;
+  display: none;
+  /*position: absolute;*/
+  width: 100%;
+  border-radius: 8px;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#language-dropdown li {
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+#language-dropdown li:hover {
+  background: #f0f0f0;
+}
+
+#language-dropdown li img {
+  width: 20px;
+  height: 15px;
+  margin-right: 6px;
+}
+
+#translation-loader {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 20px;
+  border-radius: 10px;
+  font-size: 18px;
+  font-weight: bold;
+  z-index: 999999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* #translation-loader {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.5);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    z-index: 99999;
+    color: white;
+    font-size: 18px;
+    font-family: Arial, sans-serif;
+}
+
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    border-top-color: white;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    to {
+        transform: rotate(360deg);
+    }
+} */
+
+/* Prevent text alignment issues */
+/* body {
+    white-space: normal !important;
+    word-wrap: break-word !important;
+} */
+
+/* Ensure buttons and headings don't break */
+/* button, .btn, h1, h2, h3, h4, h5, h6 {
+    white-space: nowrap !important;
+} */
+
+/* Prevent elements from stretching */
+/* p, span, div {
+    display: inline-block;
+    max-width: 100%;
+}
+ */
+/* Keep navigation bar text aligned */
+/* nav a, .navbar a {
+    text-align: center !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+} */
+
+/* Fix translation affecting button sizes */
+/* button, .btn {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: auto !important;
+} */
+
+/* Prevent flex/grid shifts due to text changes */
+/* .flex, .grid {
+    min-width: auto !important;
+    max-width: 100% !important;
+} */
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .language-switcher {
+    bottom: 10px;
+    right: 10px;
+    width: 140px;
+  }
+
+  #language-button {
+    font-size: 12px;
+    padding: 8px;
+  }
+
+  #language-dropdown li {
+    font-size: 12px;
+    padding: 6px;
+  }
+}
