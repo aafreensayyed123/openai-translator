@@ -110,7 +110,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Function to Call OpenAI API
     async function translateTexts(texts, targetLang) {
-        let apiKey = "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";
+        let apiKey = "key";
         let url = "https://api.openai.com/v1/chat/completions";
 
         let prompt = Translate the following text to ${targetLang}, but do not translate code, symbols, or numbers:\n\n + texts.join("\n");
