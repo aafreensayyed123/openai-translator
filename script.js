@@ -88,7 +88,6 @@ document.addEventListener("DOMContentLoaded", function () {
       ) {
         let text = node.nodeValue.trim();
 
-        // Detect Addresses and Skip Translation
         if (isAddress(text)) continue;
 
         textNodes.push(node);
@@ -100,15 +99,21 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
-    let translations = await translateTexts(textData, targetLang);
-
-    if (translations) {
-      translations.forEach(({ index, translatedText }) => {
-        if (textNodes[index]) {
-          textNodes[index].nodeValue =
-            translatedText || textNodes[index].nodeValue;
-        }
-      });
+    let chunkSize = 5;
+    for (let i = 0; i < textData.length; i += chunkSize) {
+      let chunk = textData.slice(i, i + chunkSize);
+      translateTexts(chunk, targetLang)
+        .then((translations) => {
+          if (translations) {
+            translations.forEach(({ index, translatedText }) => {
+              if (textNodes[index]) {
+                textNodes[index].nodeValue =
+                  translatedText || textNodes[index].nodeValue;
+              }
+            });
+          }
+        })
+        .catch((error) => console.error("Translation chunk error:", error));
     }
 
     hideLoader();
