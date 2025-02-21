@@ -17,7 +17,6 @@ document.addEventListener("DOMContentLoaded", function () {
     loader.style.display = "none";
   }
 
-  // Restore previously selected language
   let savedLang = localStorage.getItem("selectedLanguage");
   if (savedLang) {
     setLanguageButton(savedLang);
@@ -26,7 +25,6 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   }
 
-  // Toggle dropdown visibility
   languageButton.addEventListener("click", function () {
     languageDropdown.classList.toggle("hidden");
     languageDropdown.style.display = languageDropdown.classList.contains(
@@ -36,7 +34,6 @@ document.addEventListener("DOMContentLoaded", function () {
       : "block";
   });
 
-  // Select Language & Translate
   languageOptions.forEach((option) => {
     option.addEventListener("click", function () {
       let selectedLang = this.dataset.lang;
@@ -74,45 +71,42 @@ document.addEventListener("DOMContentLoaded", function () {
       null,
       false
     );
+    let textData = [];
 
     while (walker.nextNode()) {
       let node = walker.currentNode;
       let parent = node.parentNode;
 
-      // Exclude elements inside language switcher, icons, and specific elements
       if (
         node.nodeValue.trim() &&
         parent.offsetParent !== null &&
         !parent.closest(".language-switcher") &&
-        !parent.closest("svg") && // Exclude SVG icons
-        !parent.closest("i") && // Exclude <i> icons (FontAwesome, Bootstrap icons)
-        !parent.closest("code") && // Exclude code snippets
-        !parent.closest("pre") // Exclude preformatted text (e.g., code blocks)
+        !parent.closest("svg") &&
+        !parent.closest("i") &&
+        !parent.closest("code") &&
+        !parent.closest("pre")
       ) {
+        let text = node.nodeValue.trim();
+
+        // Detect Addresses and Skip Translation
+        if (isAddress(text)) continue;
+
         textNodes.push(node);
+        textData.push({
+          index: textNodes.length - 1,
+          text: text,
+          tag: parent.tagName.toLowerCase(),
+        });
       }
     }
 
-    // Extract text from nodes
-    let texts = textNodes.map((node) => node.nodeValue.trim());
-
-    // Filter out unnecessary symbols, numbers, and CSS-like texts
-    texts = texts.filter(
-      (text) =>
-        text.length > 2 && // Avoid single characters (like punctuation)
-        !text.match(/^[-+.\d\s]+$/) && // Avoid numbers, phone numbers
-        !text.match(/[{};:#]/) && // Avoid CSS-like properties
-        !text.match(/\.path{/) // Avoid CSS class definitions
-    );
-
-    let translations = await translateTexts(texts, targetLang);
+    let translations = await translateTexts(textData, targetLang);
 
     if (translations) {
-      let index = 0;
-      textNodes.forEach((node) => {
-        if (index < translations.length) {
-          node.nodeValue = translations[index] || node.nodeValue;
-          index++;
+      translations.forEach(({ index, translatedText }) => {
+        if (textNodes[index]) {
+          textNodes[index].nodeValue =
+            translatedText || textNodes[index].nodeValue;
         }
       });
     }
@@ -120,44 +114,82 @@ document.addEventListener("DOMContentLoaded", function () {
     hideLoader();
   }
 
-  // Function to Call OpenAI API
-  async function translateTexts(texts, targetLang) {
+  function isAddress(text) {
+    const addressPatterns = [
+      /\b(?:Unit|No\.|Street|Avenue|Road|Building|Estate|District|Dist\.|City|State|ZIP|Postal|Country|INDIA|USA|UK|CANADA|LLP)\b/i,
+      /\b(?:\d{3,})\b/,
+      /(?:[A-Za-z]+\s)?(?:N\.H\.|Highway|Boulevard|Drive|Plaza|Tower|Complex|Mall)/i,
+    ];
+    return addressPatterns.some((pattern) => pattern.test(text));
+  }
+
+  async function translateTexts(textData, targetLang) {
     let apiKey = "key";
     let url = "https://api.openai.com/v1/chat/completions";
 
-    let prompt =
-      `Translate the following text to ${targetLang}, but do not translate code, symbols, or numbers:\n\n` +
-      texts.join("\n");
+    let chunkSize = 5;
+    let chunks = [];
 
-    let response = await fetch(url, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + apiKey,
-      },
-      body: JSON.stringify({
-        model: "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content:
-              "You are a professional website translator. Do not translate symbols, numbers, CSS code, or code snippets.",
-          },
-          { role: "user", content: prompt },
-        ],
-      }),
-    });
-
-    let data = await response.json();
-    if (data.choices && data.choices[0]) {
-      return data.choices[0].message.content.split("\n");
-    } else {
-      console.error("Translation error:", data);
-      return null;
+    for (let i = 0; i < textData.length; i += chunkSize) {
+      chunks.push(textData.slice(i, i + chunkSize));
     }
+
+    let allTranslations = [];
+
+    for (let chunk of chunks) {
+      let prompt =
+        `Translate the following texts to ${targetLang}.  
+            - **DO NOT** translate phone numbers, email addresses, or locations.  
+            - Keep spelling **100% accurate** (NO misspellings).  
+            - Maintain natural meaning and structure.  
+            - Preserve formatting, grammar, and professional tone.\n\n` +
+        chunk
+          .map((item) => `[${item.index}] <${item.tag}> ${item.text}`)
+          .join("\n");
+
+      let response = await fetch(url, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + apiKey,
+        },
+        body: JSON.stringify({
+          model: "gpt-4-turbo",
+          messages: [
+            {
+              role: "system",
+              content:
+                "You are a professional website translator. Follow the rules strictly.",
+            },
+            { role: "user", content: prompt },
+          ],
+        }),
+      });
+
+      let data = await response.json();
+
+      if (data.choices && data.choices[0]) {
+        let translatedTexts = data.choices[0].message.content.split("\n");
+
+        translatedTexts.forEach((translatedText) => {
+          let match = translatedText.match(/^\[(\d+)]/);
+          let index = match ? parseInt(match[1]) : null;
+
+          if (index !== null) {
+            allTranslations.push({
+              index: index,
+              translatedText: translatedText.replace(/^\[\d+\]\s*<.*?>\s*/, ""),
+            });
+          }
+        });
+      } else {
+        console.error("Translation error:", data);
+      }
+    }
+
+    return allTranslations;
   }
 
-  // Close dropdown when clicking outside
   document.addEventListener("click", function (event) {
     if (
       !languageButton.contains(event.target) &&
