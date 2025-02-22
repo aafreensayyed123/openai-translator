@@ -210,8 +210,7 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function translateTexts(textData, targetLang) {
-    let apiKey =
-      "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";
+    let apiKey = "key";
     let url = "https://api.openai.com/v1/chat/completions";
 
     let chunkSize = 5;
