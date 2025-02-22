@@ -154,13 +154,13 @@ document.addEventListener("DOMContentLoaded", function () {
 
     // Translate full paragraphs
     document.querySelectorAll("p").forEach(async (paragraph) => {
-      let translation = await translateText(paragraph.innerText, targetLang);
+      let translation = await translateTexts(paragraph.innerText, targetLang);
       if (translation) paragraph.innerText = translation;
     });
 
     // Translate buttons
     document.querySelectorAll("button").forEach(async (button) => {
-      let translation = await translateText(button.innerText, targetLang);
+      let translation = await translateTexts(button.innerText, targetLang);
       if (translation) button.innerText = translation;
     });
 
@@ -172,18 +172,18 @@ document.addEventListener("DOMContentLoaded", function () {
       .querySelectorAll("[placeholder], [title], [aria-label]")
       .forEach(async (element) => {
         if (element.placeholder) {
-          let translation = await translateText(
+          let translation = await translateTexts(
             element.placeholder,
             targetLang
           );
           if (translation) element.placeholder = translation;
         }
         if (element.title) {
-          let translation = await translateText(element.title, targetLang);
+          let translation = await translateTexts(element.title, targetLang);
           if (translation) element.title = translation;
         }
         if (element.getAttribute("aria-label")) {
-          let translation = await translateText(
+          let translation = await translateTexts(
             element.getAttribute("aria-label"),
             targetLang
           );
