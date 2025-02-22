@@ -22,7 +22,8 @@ function openai_language_switcher()
         <button id="language-button">
             <img src="https://flagcdn.com/w40/gb.png" alt="English">
             <span class="button-text">English</span>
-            <span class="spinner hidden"></span> <!-- Spinner -->
+            <!-- <span class="spinner hidden"></span>  -->
+            <!-- Spinner -->
         </button>
         <ul id="language-dropdown" class="hidden">
             <li class="language-option" data-lang="en">

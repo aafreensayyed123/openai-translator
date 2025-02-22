@@ -66,11 +66,18 @@ document.addEventListener("DOMContentLoaded", function () {
     );
     if (selectedOption) {
       languageButton.innerHTML = selectedOption.innerHTML + " ";
-      languageButton.appendChild(spinner); // Reattach spinner
+
+      if (lang !== "en") {
+        languageButton.appendChild(spinner); // Show spinner only for non-English
+      }
     }
   }
 
   async function applyTranslation(targetLang) {
+    if (targetLang === "en") {
+      hideSpinner(); // Don't show spinner for English
+      return;
+    }
     showSpinner(); // Show spinner when translation starts
 
     let textNodes = [];
@@ -142,7 +149,47 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch((error) => console.error("Translation chunk error:", error));
     }
 
+    // Translate attributes
+    translateAttributes(targetLang);
+
+    // Translate full paragraphs
+    document.querySelectorAll("p").forEach(async (paragraph) => {
+      let translation = await translateText(paragraph.innerText, targetLang);
+      if (translation) paragraph.innerText = translation;
+    });
+
+    // Translate buttons
+    document.querySelectorAll("button").forEach(async (button) => {
+      let translation = await translateText(button.innerText, targetLang);
+      if (translation) button.innerText = translation;
+    });
+
     hideSpinner(); // Hide spinner when translation is completed
+  }
+
+  function translateAttributes(targetLang) {
+    document
+      .querySelectorAll("[placeholder], [title], [aria-label]")
+      .forEach(async (element) => {
+        if (element.placeholder) {
+          let translation = await translateText(
+            element.placeholder,
+            targetLang
+          );
+          if (translation) element.placeholder = translation;
+        }
+        if (element.title) {
+          let translation = await translateText(element.title, targetLang);
+          if (translation) element.title = translation;
+        }
+        if (element.getAttribute("aria-label")) {
+          let translation = await translateText(
+            element.getAttribute("aria-label"),
+            targetLang
+          );
+          if (translation) element.setAttribute("aria-label", translation);
+        }
+      });
   }
 
   function showSpinner() {
@@ -163,7 +210,8 @@ document.addEventListener("DOMContentLoaded", function () {
   }
 
   async function translateTexts(textData, targetLang) {
-    let apiKey = "key";
+    let apiKey =
+      "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";
     let url = "https://api.openai.com/v1/chat/completions";
 
     let chunkSize = 5;
