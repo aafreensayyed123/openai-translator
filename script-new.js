@@ -2,20 +2,28 @@ document.addEventListener("DOMContentLoaded", function () {
   const languageButton = document.getElementById("language-button");
   const languageDropdown = document.getElementById("language-dropdown");
   const languageOptions = document.querySelectorAll(".language-option");
-  const loader = document.createElement("div");
+  const buttonText = languageButton.querySelector(".button-text");
+  // const spinner = languageButton.querySelector(".spinner");
+  //   const loader = document.createElement("div");
 
-  loader.id = "translation-loader";
-  loader.innerHTML = "Translating...";
-  document.body.appendChild(loader);
-  loader.style.display = "none";
+  // loader.id = "translation-loader";
+  // loader.innerHTML = "Translating...";
+  // document.body.appendChild(loader);
+  // loader.style.display = "none";
 
-  function showLoader() {
-    loader.style.display = "flex";
-  }
+  // function showLoader() {
+  //   loader.style.display = "flex";
+  // }
 
-  function hideLoader() {
-    loader.style.display = "none";
-  }
+  // function hideLoader() {
+  //   loader.style.display = "none";
+  // }
+
+  // Create spinner element inside the button
+  const spinner = document.createElement("span");
+  spinner.classList.add("spinner");
+  spinner.style.display = "none"; // Initially hidden
+  languageButton.appendChild(spinner);
 
   let savedLang = localStorage.getItem("selectedLanguage");
   if (savedLang) {
@@ -57,12 +65,13 @@ document.addEventListener("DOMContentLoaded", function () {
       `.language-option[data-lang="${lang}"]`
     );
     if (selectedOption) {
-      languageButton.innerHTML = selectedOption.innerHTML + " ▼";
+      languageButton.innerHTML = selectedOption.innerHTML + " ";
+      languageButton.appendChild(spinner); // Reattach spinner
     }
   }
 
   async function applyTranslation(targetLang) {
-    showLoader();
+    showSpinner(); // Show spinner when translation starts
 
     let textNodes = [];
     let walker = document.createTreeWalker(
@@ -90,7 +99,10 @@ document.addEventListener("DOMContentLoaded", function () {
 
         if (isAddress(text)) continue;
 
-        textNodes.push(node);
+        let rect = parent.getBoundingClientRect();
+        let isInViewport = rect.top >= 0 && rect.bottom <= window.innerHeight;
+
+        textNodes.push({ node, isInViewport, order: rect.top });
         textData.push({
           index: textNodes.length - 1,
           text: text,
@@ -99,16 +111,30 @@ document.addEventListener("DOMContentLoaded", function () {
       }
     }
 
+    // Prioritize translating visible text first, then the rest
+    textNodes.sort((a, b) =>
+      a.isInViewport === b.isInViewport
+        ? a.order - b.order
+        : a.isInViewport
+        ? -1
+        : 1
+    );
+    let orderedTextData = textNodes.map(({ node }, index) => ({
+      index,
+      text: node.nodeValue.trim(),
+      tag: node.parentNode.tagName.toLowerCase(),
+    }));
+
     let chunkSize = 5;
-    for (let i = 0; i < textData.length; i += chunkSize) {
-      let chunk = textData.slice(i, i + chunkSize);
-      translateTexts(chunk, targetLang)
+    for (let i = 0; i < orderedTextData.length; i += chunkSize) {
+      let chunk = orderedTextData.slice(i, i + chunkSize);
+      await translateTexts(chunk, targetLang)
         .then((translations) => {
           if (translations) {
             translations.forEach(({ index, translatedText }) => {
-              if (textNodes[index]) {
-                textNodes[index].nodeValue =
-                  translatedText || textNodes[index].nodeValue;
+              if (textNodes[index] && textNodes[index].node) {
+                textNodes[index].node.nodeValue =
+                  translatedText || textNodes[index].node.nodeValue;
               }
             });
           }
@@ -116,7 +142,15 @@ document.addEventListener("DOMContentLoaded", function () {
         .catch((error) => console.error("Translation chunk error:", error));
     }
 
-    hideLoader();
+    hideSpinner(); // Hide spinner when translation is completed
+  }
+
+  function showSpinner() {
+    spinner.style.display = "inline-block";
+  }
+
+  function hideSpinner() {
+    spinner.style.display = "none";
   }
 
   function isAddress(text) {
